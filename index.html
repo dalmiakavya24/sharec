@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharec - Bill Splitter & Dues Record Keeper</title>
+  <meta name="description" content="Sharec (Share + Record) - Neo-brutalist dinner bill splitter and personal dues record keeper. Split equally or item-by-item, track who covered whom, and export receipts.">
+  <meta property="og:title" content="Sharec - Bill Splitter & Dues Record Keeper">
+  <meta property="og:description" content="Sharec (Share + Record) - Neo-brutalist dinner bill splitter and personal dues record keeper. Split equally or item-by-item, track who covered whom, and export receipts.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body class="light-theme">
+  <!-- Top Marquee / Banner Announcement -->
+  <div class="brutal-strip no-print">
+    <div class="marquee-content">
+      <span>🍕 SHARE + RECORD DUES</span>
+      <span class="marquee-star">✦</span>
+      <span>FAIR RESTAURANT SETTLEMENTS</span>
+      <span class="marquee-star">✦</span>
+      <span>INSTANT TIP & TAX MATH</span>
+      <span class="marquee-star">✦</span>
+      <span>TRACK WHO PAID ON BEHALF</span>
+      <span class="marquee-star">✦</span>
+      <span>OFFLINE COMPATIBLE</span>
+      <span class="marquee-star">✦</span>
+      <span>ZERO AWKWARD MATH</span>
+      <span class="marquee-star">✦</span>
+    </div>
+  </div>
+
+  <!-- Main Brutalist Header -->
+  <header class="app-header no-print">
+    <div class="header-container">
+      <div class="brand-block">
+        <div class="brand-stamp">REC</div>
+        <div class="brand-text-wrap">
+          <h1 class="brand-title">SHAREC</h1>
+          <span class="brand-subtitle">SHARE + RECORD</span>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Currency Chooser -->
+        <div class="control-box currency-control-box" title="Select Currency">
+          <label for="currency-select" class="control-label">CURRENCY:</label>
+          <select id="currency-select" class="brutal-select">
+            <option value="$" selected>USD ($)</option>
+            <option value="₹">INR (₹)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+            <option value="C$">CAD (C$)</option>
+            <option value="A$">AUD (A$)</option>
+            <option value="¥">JPY (¥)</option>
+          </select>
+        </div>
+
+        <!-- Demo Data Button -->
+        <button id="btn-load-sample" class="brutal-btn brutal-btn-yellow" title="Load sample group dinner data">
+          <span class="btn-icon">⚡</span>
+          <span>DEMO DATA</span>
+        </button>
+
+        <!-- Dark Mode Toggle -->
+        <button id="theme-toggle-btn" class="brutal-btn brutal-btn-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+          <span class="theme-icon-light">☀️ LIGHT</span>
+          <span class="theme-icon-dark">🌙 DARK</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <!-- MODE SELECTOR (Only one mode shown at a time) -->
+    <section class="mode-bar-section no-print">
+      <div class="mode-bar-container">
+        <span class="mode-lead-badge">CHOOSE SPLIT MODE:</span>
+        <div class="mode-switch-pair" role="tablist">
+          <button type="button" id="tab-total" class="mode-toggle-btn active" role="tab" aria-selected="true" aria-controls="total-mode-view">
+            <span class="mode-icon">👥</span>
+            <div class="mode-info">
+              <span class="mode-title">EQUAL BILL SPLIT</span>
+              <span class="mode-hint">Divide total bill & tips evenly</span>
+            </div>
+          </button>
+
+          <button type="button" id="tab-itemwise" class="mode-toggle-btn" role="tab" aria-selected="false" aria-controls="itemwise-mode-view">
+            <span class="mode-icon">🧾</span>
+            <div class="mode-info">
+              <span class="mode-title">ITEM-WISE SPLIT</span>
+              <span class="mode-hint">Pay for what you ordered + tax share</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Global Notice / Validation Banner -->
+    <div id="status-banner" class="status-banner hidden no-print" role="alert">
+      <div class="banner-tag" id="banner-tag">ATTENTION</div>
+      <p id="banner-message" class="banner-text"></p>
+      <button id="banner-close" class="banner-close-btn" aria-label="Close message">✕</button>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW A: EQUAL BILL SPLIT MODE (Shown ONLY when Equal mode active) -->
+    <!-- ================================================================= -->
+    <div id="total-mode-view" class="mode-full-workspace active" role="tabpanel" aria-labelledby="tab-total">
+      <div class="workspace-grid">
+        <!-- Left: Equal Split Input Form -->
+        <div class="workspace-column no-print">
+          <div class="brutal-card card-lime">
+            <div class="card-header-bar">
+              <span class="card-tag">INPUTS</span>
+              <h2 class="card-heading">EQUAL SPLIT DETAILS</h2>
+            </div>
+
+            <form id="form-total-split" novalidate onsubmit="return false;">
+              <!-- Occasion -->
+              <div class="brutal-field">
+                <label for="total-occasion" class="field-label">OCCASION / RESTAURANT NAME:</label>
+                <input type="text" id="total-occasion" class="brutal-input" placeholder="e.g. Friday Pizza Night, Rooftop Bar" maxlength="80">
+              </div>
+
+              <!-- Bill Amount & People Count -->
+              <div class="field-row-2">
+                <div class="brutal-field">
+                  <label for="total-bill-amount" class="field-label field-required">TOTAL BILL AMOUNT (<span class="currency-symbol">$</span>):</label>
+                  <div class="input-symbol-wrap">
+                    <span class="input-sym currency-symbol">$</span>
+                    <input type="number" id="total-bill-amount" class="brutal-input input-with-sym" placeholder="0.00" step="0.01" min="0.01" required>
+                  </div>
+                  <span class="field-error" id="err-total-bill"></span>
+                </div>
+
+                <div class="brutal-field">
+                  <label for="total-people-count" class="field-label field-required">NUMBER OF PEOPLE:</label>
+                  <div class="stepper-wrap">
+                    <button type="button" class="btn-stepper" data-target="total-people-count" data-delta="-1" aria-label="Subtract person">-</button>
+                    <input type="number" id="total-people-count" class="brutal-input input-stepper text-center" value="4" min="1" step="1" required>
+                    <button type="button" class="btn-stepper" data-target="total-people-count" data-delta="1" aria-label="Add person">+</button>
+                  </div>
+                  <span class="field-error" id="err-total-people"></span>
+                </div>
+              </div>
+
+              <!-- Tip Selector -->
+              <div class="brutal-box box-dashed">
+                <div class="box-title-row">
+                  <span class="box-subtitle">ADD TIP (OPTIONAL):</span>
+                  <span class="tip-live-tag" id="total-tip-calculated">TIP: <span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="tip-button-grid" id="total-tip-chips">
+                  <button type="button" class="btn-tip-pill active" data-percent="0">0%</button>
+                  <button type="button" class="btn-tip-pill" data-percent="10">10%</button>
+                  <button type="button" class="btn-tip-pill" data-percent="15">15%</button>
+                  <button type="button" class="btn-tip-pill" data-percent="18">18%</button>
+                  <button type="button" class="btn-tip-pill" data-percent="20">20%</button>
+                  <button type="button" class="btn-tip-pill" data-percent="custom">CUSTOM %</button>
+                </div>
+                <div class="custom-tip-drawer hidden" id="total-custom-tip-box">
+                  <label for="total-custom-tip-val" class="sub-label">Enter Custom Tip %:</label>
+                  <div class="input-suffix-wrap">
+                    <input type="number" id="total-custom-tip-val" class="brutal-input" placeholder="e.g. 25" min="0" max="100" step="0.5">
+                    <span class="input-suf">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Extra Tax & Fee Drawer -->
+              <div class="brutal-accordion">
+                <button type="button" class="accordion-head" id="total-extra-toggle">
+                  <span>+ ADD EXTRA TAX / SERVICE CHARGE (IF EXCLUDED FROM BILL)</span>
+                  <span class="acc-indicator">▼</span>
+                </button>
+                <div class="accordion-content hidden" id="total-extra-body">
+                  <div class="field-row-2">
+                    <div class="brutal-field">
+                      <label for="total-tax-amount" class="field-label">TAX AMOUNT (<span class="currency-symbol">$</span>):</label>
+                      <input type="number" id="total-tax-amount" class="brutal-input" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                    <div class="brutal-field">
+                      <label for="total-service-amount" class="field-label">SERVICE CHARGE (<span class="currency-symbol">$</span>):</label>
+                      <input type="number" id="total-service-amount" class="brutal-input" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="form-btn-bar">
+                <button type="button" id="btn-calc-total" class="brutal-btn brutal-btn-primary btn-block">
+                  <span>⚡ CALCULATE EQUAL SPLIT</span>
+                </button>
+                <button type="button" id="btn-reset-total" class="brutal-btn brutal-btn-white" title="Reset this form">
+                  <span>RESET</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- DUES & RECORD TRACKER (Paid on behalf) FOR EQUAL SPLIT -->
+          <div class="brutal-card card-purple dues-card-block">
+            <div class="card-header-bar">
+              <span class="card-tag tag-purple">RECORD KEEPER</span>
+              <h3 class="card-heading">PAID ON BEHALF / DUES</h3>
+            </div>
+            <p class="card-explainer">Did someone cover a friend's share or buy extra drinks? Log it below so Sharec calculates who owes whom!</p>
+
+            <div class="dues-entry-form">
+              <div class="field-row-2">
+                <div class="brutal-field">
+                  <label for="total-payer-select" class="field-label">WHO PAID:</label>
+                  <select id="total-payer-select" class="brutal-select"></select>
+                </div>
+                <div class="brutal-field">
+                  <label for="total-borrower-select" class="field-label">ON BEHALF OF:</label>
+                  <select id="total-borrower-select" class="brutal-select"></select>
+                </div>
+              </div>
+              <div class="field-row-2">
+                <div class="brutal-field">
+                  <label for="total-cover-amount" class="field-label">AMOUNT COVERED (<span class="currency-symbol">$</span>):</label>
+                  <input type="number" id="total-cover-amount" class="brutal-input" placeholder="0.00" step="0.01" min="0.01">
+                </div>
+                <div class="brutal-field">
+                  <label for="total-cover-note" class="field-label">NOTE / REASON:</label>
+                  <input type="text" id="total-cover-note" class="brutal-input" placeholder="e.g. Cocktails, cab fare" maxlength="50">
+                </div>
+              </div>
+              <button type="button" id="btn-add-cover-total" class="brutal-btn brutal-btn-yellow btn-block">
+                <span>+ RECORD COVER TRANSACTION</span>
+              </button>
+            </div>
+
+            <!-- List of recorded dues -->
+            <div class="dues-log-wrapper">
+              <div class="dues-log-header">
+                <span class="log-title">ACTIVE COVER TRANSACTIONS:</span>
+                <span class="badge-count" id="total-dues-count">0</span>
+              </div>
+              <div id="total-dues-list" class="dues-list-container">
+                <p class="dues-empty-hint">No cover transactions recorded yet. Add one above!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Equal Split Results & Settlement -->
+        <div class="workspace-column">
+          <!-- EMPTY STATE -->
+          <div id="total-empty-state" class="brutal-card card-empty">
+            <div class="empty-graphic">⚡</div>
+            <h3 class="empty-headline">READY TO SPLIT</h3>
+            <p class="empty-sub">Enter the bill amount and party size on the left, then click <strong>Calculate Equal Split</strong> to generate the summary, receipt, and dues breakdown.</p>
+          </div>
+
+          <!-- NO RESULT STATE (Mandatory: shown when bill or people is blank, zero, or negative) -->
+          <div id="total-no-result-state" class="brutal-card card-alert hidden">
+            <div class="alert-badge">NO RESULTS AVAILABLE</div>
+            <h3 class="alert-headline" id="total-no-result-text">Bill amount and number of people must be greater than zero.</h3>
+            <div class="alert-checklist">
+              <p><strong>Please check:</strong></p>
+              <ul>
+                <li>Total bill amount is not blank, zero, or negative.</li>
+                <li>Number of people is at least 1 or more.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- ACTIVE RESULT SUMMARY -->
+          <div id="total-result-content" class="result-display-container hidden">
+            <!-- Mandatory Success Confirmation -->
+            <div class="brutal-banner banner-success-box" id="total-success-banner">
+              <span class="banner-stamp">SUCCESS</span>
+              <div>
+                <h4 class="banner-bold">BILL SPLIT SUCCESSFULLY!</h4>
+                <p class="banner-sub" id="total-success-text">All diner shares and tip distributions have been calculated accurately.</p>
+              </div>
+            </div>
+
+            <!-- Receipt & Summary Card -->
+            <div class="brutal-card card-receipt">
+              <div class="receipt-top-row">
+                <div>
+                  <span class="stamp-chip">EQUAL BILL BREAKDOWN</span>
+                  <h3 class="receipt-title" id="total-receipt-occasion">DINNER OUTING</h3>
+                  <span class="receipt-date" id="total-receipt-time"></span>
+                </div>
+                <div class="receipt-total-block">
+                  <span class="total-tag">GRAND TOTAL</span>
+                  <span class="total-number" id="total-receipt-grand"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+              </div>
+
+              <!-- Metric Badges -->
+              <div class="receipt-metric-row">
+                <div class="metric-pill">
+                  <span class="metric-label">FOOD SUB:</span>
+                  <span class="metric-val" id="total-metric-food"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">TAX + FEES:</span>
+                  <span class="metric-val" id="total-metric-fees"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">TOTAL TIP:</span>
+                  <span class="metric-val" id="total-metric-tip"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">EACH PAYS:</span>
+                  <span class="metric-val val-highlight" id="total-metric-each"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+              </div>
+
+              <!-- Action Bar (PDF, Copy, Mark All Paid) -->
+              <div class="receipt-action-bar no-print">
+                <button type="button" id="btn-export-pdf-total" class="brutal-btn brutal-btn-lime">
+                  <span>📄 EXPORT AS PDF</span>
+                </button>
+                <button type="button" id="btn-copy-total" class="brutal-btn brutal-btn-white">
+                  <span>📋 COPY SUMMARY</span>
+                </button>
+                <button type="button" id="btn-toggle-all-paid-total" class="brutal-btn brutal-btn-cyan">
+                  <span>✓ TOGGLE ALL PAID</span>
+                </button>
+              </div>
+
+              <!-- Member Shares Breakdown -->
+              <div class="member-breakdown-section">
+                <div class="section-badge-bar">
+                  <span class="badge-title">MEMBER BREAKDOWN & PAID STATUS:</span>
+                  <span class="badge-sub" id="total-shares-indicator">Equally Divided</span>
+                </div>
+                <div id="total-diners-cards-container" class="diners-card-grid"></div>
+              </div>
+
+              <!-- Net Dues & Who-Owes-Whom Settlement Matrix -->
+              <div class="net-dues-section" id="total-net-dues-box">
+                <div class="section-badge-bar bg-yellow-bar">
+                  <span class="badge-title">WHO OWES WHOM (NET SETTLEMENT):</span>
+                </div>
+                <div id="total-net-dues-list" class="net-dues-matrix"></div>
+              </div>
+
+              <!-- Print-Only Receipt Footer -->
+              <div class="print-receipt-footer">
+                <div class="receipt-zig-zag"></div>
+                <p>SHAREC &bull; SHARE + RECORD FAIR DINING SYSTEM</p>
+                <p>Calculated & Settled with Zero Drama</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW B: ITEM-WISE SPLIT MODE (Shown ONLY when Item-Wise mode active) -->
+    <!-- ===================================================================== -->
+    <div id="itemwise-mode-view" class="mode-full-workspace hidden" role="tabpanel" aria-labelledby="tab-itemwise">
+      <div class="workspace-grid">
+        <!-- Left: Item-Wise Form -->
+        <div class="workspace-column no-print">
+          <!-- Step 1: Receipt & Totals -->
+          <div class="brutal-card card-cyan">
+            <div class="card-header-bar">
+              <span class="card-tag">STEP 1</span>
+              <h2 class="card-heading">RECEIPT TOTALS & EXTRAS</h2>
+            </div>
+
+            <form id="form-itemwise-split" novalidate onsubmit="return false;">
+              <div class="brutal-field">
+                <label for="itemwise-occasion" class="field-label">OCCASION / RESTAURANT NAME:</label>
+                <input type="text" id="itemwise-occasion" class="brutal-input" placeholder="e.g. Osteria Birthday Feast, Tapas Friday" maxlength="80">
+              </div>
+
+              <div class="field-row-2">
+                <div class="brutal-field">
+                  <label for="itemwise-total-bill" class="field-label field-required">RECEIPT BILL TOTAL (<span class="currency-symbol">$</span>):</label>
+                  <div class="input-symbol-wrap">
+                    <span class="input-sym currency-symbol">$</span>
+                    <input type="number" id="itemwise-total-bill" class="brutal-input input-with-sym" placeholder="0.00" step="0.01" min="0.01" required>
+                  </div>
+                  <span class="field-error" id="err-itemwise-bill"></span>
+                </div>
+
+                <div class="brutal-field">
+                  <label for="itemwise-people-count" class="field-label field-required">NUMBER OF PEOPLE:</label>
+                  <div class="stepper-wrap">
+                    <button type="button" class="btn-stepper" data-target="itemwise-people-count" data-delta="-1" aria-label="Subtract person">-</button>
+                    <input type="number" id="itemwise-people-count" class="brutal-input input-stepper text-center" value="3" min="1" max="30" step="1" required>
+                    <button type="button" class="btn-stepper" data-target="itemwise-people-count" data-delta="1" aria-label="Add person">+</button>
+                  </div>
+                  <span class="field-error" id="err-itemwise-people"></span>
+                </div>
+              </div>
+
+              <!-- Shared Taxes, Service, Tip -->
+              <div class="brutal-box box-flat-yellow">
+                <span class="box-subtitle">TAXES, SERVICE CHARGE & TIP (SPLIT PROPORTIONALLY):</span>
+                <div class="field-row-3">
+                  <div class="brutal-field">
+                    <label for="itemwise-tax" class="field-label">TAX (<span class="currency-symbol">$</span>):</label>
+                    <input type="number" id="itemwise-tax" class="brutal-input" placeholder="0.00" step="0.01" min="0">
+                  </div>
+                  <div class="brutal-field">
+                    <label for="itemwise-service" class="field-label">SERVICE (<span class="currency-symbol">$</span>):</label>
+                    <input type="number" id="itemwise-service" class="brutal-input" placeholder="0.00" step="0.01" min="0">
+                  </div>
+                  <div class="brutal-field">
+                    <label for="itemwise-tip" class="field-label">TIP (<span class="currency-symbol">$</span>):</label>
+                    <input type="number" id="itemwise-tip" class="brutal-input" placeholder="0.00" step="0.01" min="0">
+                  </div>
+                </div>
+                <div class="quick-tip-row">
+                  <span class="quick-tip-title">AUTO-CALC TIP:</span>
+                  <button type="button" class="btn-chip-quick" data-tip-percent="10">10%</button>
+                  <button type="button" class="btn-chip-quick" data-tip-percent="15">15%</button>
+                  <button type="button" class="btn-chip-quick" data-tip-percent="18">18%</button>
+                  <button type="button" class="btn-chip-quick" data-tip-percent="20">20%</button>
+                  <button type="button" class="btn-chip-quick" data-tip-percent="0">CLEAR</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Step 2: Group Members with ADD MEMBER Option -->
+          <div class="brutal-card card-yellow">
+            <div class="card-header-bar">
+              <span class="card-tag tag-black">STEP 2</span>
+              <h3 class="card-heading">GROUP MEMBERS</h3>
+              <button type="button" id="btn-add-member" class="brutal-btn brutal-btn-primary btn-sm" title="Add a new member to the group">
+                <span>+ ADD MEMBER</span>
+              </button>
+            </div>
+            <p class="card-explainer">Customize member names or click <strong>+ Add Member</strong> to expand your party:</p>
+
+            <div id="people-names-container" class="members-roster-grid"></div>
+          </div>
+
+          <!-- Step 3: Items Ordered & Assignees -->
+          <div class="brutal-card card-pink">
+            <div class="card-header-bar">
+              <span class="card-tag tag-pink">STEP 3</span>
+              <h3 class="card-heading">ITEMS ORDERED & ASSIGNMENTS</h3>
+              <button type="button" id="btn-add-item" class="brutal-btn brutal-btn-yellow btn-sm" title="Add another dish or drink">
+                <span>+ ADD ITEM</span>
+              </button>
+            </div>
+            <p class="card-explainer">Assign each item to the people who ate it. Multi-selected items are split evenly between assignees.</p>
+
+            <!-- Realtime Balance Ticker -->
+            <div class="brutal-ticker-box">
+              <div class="ticker-col">
+                <span class="tick-label">ITEMS TOTAL:</span>
+                <span class="tick-val" id="ticker-items-subtotal"><span class="currency-symbol">$</span>0.00</span>
+              </div>
+              <div class="ticker-col">
+                <span class="tick-label">TAX + TIP + FEE:</span>
+                <span class="tick-val" id="ticker-extras"><span class="currency-symbol">$</span>0.00</span>
+              </div>
+              <div class="ticker-col">
+                <span class="tick-label">CALCULATED SUM:</span>
+                <span class="tick-val" id="ticker-sum-total"><span class="currency-symbol">$</span>0.00</span>
+              </div>
+              <div class="ticker-col">
+                <span class="tick-label">RECEIPT TARGET:</span>
+                <span class="tick-val" id="ticker-target-diff">MATCH</span>
+              </div>
+            </div>
+
+            <!-- Items List -->
+            <div id="items-list-container" class="items-stack"></div>
+
+            <!-- Action buttons -->
+            <div class="form-btn-bar">
+              <button type="button" id="btn-calc-itemwise" class="brutal-btn brutal-btn-primary btn-block">
+                <span>⚡ CALCULATE ITEM-WISE SPLIT</span>
+              </button>
+              <button type="button" id="btn-reset-itemwise" class="brutal-btn brutal-btn-white" title="Reset this form">
+                <span>RESET</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- DUES & RECORD TRACKER FOR ITEM-WISE SPLIT -->
+          <div class="brutal-card card-purple dues-card-block">
+            <div class="card-header-bar">
+              <span class="card-tag tag-purple">RECORD KEEPER</span>
+              <h3 class="card-heading">PAID ON BEHALF / DUES</h3>
+            </div>
+            <p class="card-explainer">Record if someone paid for another member's share (e.g. Alex covered Jordan's steak or drinks):</p>
+
+            <div class="dues-entry-form">
+              <div class="field-row-2">
+                <div class="brutal-field">
+                  <label for="itemwise-payer-select" class="field-label">WHO PAID:</label>
+                  <select id="itemwise-payer-select" class="brutal-select"></select>
+                </div>
+                <div class="brutal-field">
+                  <label for="itemwise-borrower-select" class="field-label">ON BEHALF OF:</label>
+                  <select id="itemwise-borrower-select" class="brutal-select"></select>
+                </div>
+              </div>
+              <div class="field-row-2">
+                <div class="brutal-field">
+                  <label for="itemwise-cover-amount" class="field-label">AMOUNT COVERED (<span class="currency-symbol">$</span>):</label>
+                  <input type="number" id="itemwise-cover-amount" class="brutal-input" placeholder="0.00" step="0.01" min="0.01">
+                </div>
+                <div class="brutal-field">
+                  <label for="itemwise-cover-note" class="field-label">NOTE / REASON:</label>
+                  <input type="text" id="itemwise-cover-note" class="brutal-input" placeholder="e.g. Dessert, beer round" maxlength="50">
+                </div>
+              </div>
+              <button type="button" id="btn-add-cover-itemwise" class="brutal-btn brutal-btn-yellow btn-block">
+                <span>+ RECORD COVER TRANSACTION</span>
+              </button>
+            </div>
+
+            <!-- List of recorded dues -->
+            <div class="dues-log-wrapper">
+              <div class="dues-log-header">
+                <span class="log-title">ACTIVE COVER TRANSACTIONS:</span>
+                <span class="badge-count" id="itemwise-dues-count">0</span>
+              </div>
+              <div id="itemwise-dues-list" class="dues-list-container">
+                <p class="dues-empty-hint">No cover transactions recorded yet. Add one above!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Item-Wise Results & Settlement -->
+        <div class="workspace-column">
+          <!-- EMPTY STATE -->
+          <div id="itemwise-empty-state" class="brutal-card card-empty">
+            <div class="empty-graphic">🍕</div>
+            <h3 class="empty-headline">READY FOR ITEM BREAKDOWN</h3>
+            <p class="empty-sub">Input dishes, assign members, and click <strong>Calculate Item-Wise Split</strong> to get every person's share with exact taxes and service fees.</p>
+          </div>
+
+          <!-- NO RESULT STATE -->
+          <div id="itemwise-no-result-state" class="brutal-card card-alert hidden">
+            <div class="alert-badge">NO RESULTS AVAILABLE</div>
+            <h3 class="alert-headline" id="itemwise-no-result-text">Bill amount and number of people must be greater than zero.</h3>
+            <div class="alert-checklist">
+              <p><strong>Please check:</strong></p>
+              <ul>
+                <li>Total bill amount is greater than zero.</li>
+                <li>Number of people is at least 1 or more.</li>
+                <li id="itemwise-item-alert-tip" class="hidden">At least one item added with valid cost and assigned diners.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- ACTIVE RESULT SUMMARY -->
+          <div id="itemwise-result-content" class="result-display-container hidden">
+            <!-- Mandatory Success Confirmation -->
+            <div class="brutal-banner banner-success-box" id="itemwise-success-banner">
+              <span class="banner-stamp">SUCCESS</span>
+              <div>
+                <h4 class="banner-bold">BILL SPLIT SUCCESSFULLY!</h4>
+                <p class="banner-sub" id="itemwise-success-text">All diner shares and tip distributions have been calculated accurately.</p>
+              </div>
+            </div>
+
+            <!-- Receipt & Summary Card -->
+            <div class="brutal-card card-receipt">
+              <div class="receipt-top-row">
+                <div>
+                  <span class="stamp-chip">ITEM-WISE SETTLEMENT</span>
+                  <h3 class="receipt-title" id="itemwise-receipt-occasion">DINNER OUTING</h3>
+                  <span class="receipt-date" id="itemwise-receipt-time"></span>
+                </div>
+                <div class="receipt-total-block">
+                  <span class="total-tag">GRAND TOTAL</span>
+                  <span class="total-number" id="itemwise-receipt-grand"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+              </div>
+
+              <!-- Metric Badges -->
+              <div class="receipt-metric-row">
+                <div class="metric-pill">
+                  <span class="metric-label">ITEMS SUB:</span>
+                  <span class="metric-val" id="itemwise-metric-food"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">TAX + FEES:</span>
+                  <span class="metric-val" id="itemwise-metric-fees"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">TOTAL TIP:</span>
+                  <span class="metric-val" id="itemwise-metric-tip"><span class="currency-symbol">$</span>0.00</span>
+                </div>
+                <div class="metric-pill">
+                  <span class="metric-label">DINERS:</span>
+                  <span class="metric-val val-highlight" id="itemwise-metric-diners">0</span>
+                </div>
+              </div>
+
+              <!-- Action Bar -->
+              <div class="receipt-action-bar no-print">
+                <button type="button" id="btn-export-pdf-itemwise" class="brutal-btn brutal-btn-lime">
+                  <span>📄 EXPORT AS PDF</span>
+                </button>
+                <button type="button" id="btn-copy-itemwise" class="brutal-btn brutal-btn-white">
+                  <span>📋 COPY SUMMARY</span>
+                </button>
+                <button type="button" id="btn-toggle-all-paid-itemwise" class="brutal-btn brutal-btn-cyan">
+                  <span>✓ TOGGLE ALL PAID</span>
+                </button>
+              </div>
+
+              <!-- Member Shares Breakdown -->
+              <div class="member-breakdown-section">
+                <div class="section-badge-bar">
+                  <span class="badge-title">INDIVIDUAL MEMBER BREAKDOWN:</span>
+                  <span class="badge-sub" id="itemwise-shares-indicator">Itemized Proportions</span>
+                </div>
+                <div id="itemwise-diners-cards-container" class="diners-card-grid"></div>
+              </div>
+
+              <!-- Net Dues & Who-Owes-Whom Settlement Matrix -->
+              <div class="net-dues-section" id="itemwise-net-dues-box">
+                <div class="section-badge-bar bg-yellow-bar">
+                  <span class="badge-title">WHO OWES WHOM (NET SETTLEMENT):</span>
+                </div>
+                <div id="itemwise-net-dues-list" class="net-dues-matrix"></div>
+              </div>
+
+              <!-- Print-Only Receipt Footer -->
+              <div class="print-receipt-footer">
+                <div class="receipt-zig-zag"></div>
+                <p>SHAREC &bull; SHARE + RECORD FAIR DINING SYSTEM</p>
+                <p>Calculated & Settled with Zero Drama</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Reset Confirmation Dialog -->
+  <dialog id="reset-confirm-modal" class="brutal-modal no-print">
+    <div class="brutal-modal-box">
+      <div class="modal-stamp">WARNING</div>
+      <h3 class="modal-heading">RESET CURRENT FORM?</h3>
+      <p class="modal-message">This will reset all bill numbers, diner roster, ordered items, and dues back to clean defaults.</p>
+      <div class="modal-button-row">
+        <button type="button" id="modal-cancel-btn" class="brutal-btn brutal-btn-white">CANCEL</button>
+        <button type="button" id="modal-confirm-reset-btn" class="brutal-btn brutal-btn-primary">YES, RESET</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="brutal-toast hidden no-print" role="status"></div>
+
+  <!-- Pure Vanilla Script (Works by double-clicking index.html) -->
+  <script src="./script.js"></script>
+</body>
+</html>
